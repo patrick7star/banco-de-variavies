@@ -300,8 +300,9 @@ int main(void)
    // Ativando uso de estringues Unicode...
    setlocale(LC_CTYPE, "");
    
-   executa_testes(
-      3, criacao_dos_arquivos_necessarios, true,
+   executa_testes_a(
+      ture, 3, 
+         criacao_dos_arquivos_necessarios, true,
          criacao_simples_no_atual_diretorio, true,
          invalidade_de_abrir_banco_inexistente, true
    );

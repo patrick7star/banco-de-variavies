@@ -1,10 +1,3 @@
-/*   Serialização/ e deserilização de vários tipos primitivos, ou estruturas
- * um pouco mais complexas, necessárias para este programa. 
- *   A ordem de arranjo dos bytes de cada campo de variáveis segue, 
- * estritamente, a ordem com que está declarada na implementação deste tipo
- * de estrutura abstrata. 
- */
-
 // Declaração dos tipos de dados, funções e métodos abaixo:
 #include "serializacao.h"
 // Biblioteca padrão do C:
@@ -18,6 +11,8 @@
 #include "conversao.h"
 #include "dados.h"
 #include "hashtable_ref.h"
+// Módulos do próprio projeto:
+#include "tabela.h"
 
 const char* METADADOS_ID = "metadados";
 const char* CADEADO_ID = "controle";
@@ -161,14 +156,14 @@ struct Bytes serializa_registro(Registro* e)
    struct Bytes output; 
    // Quantidade de bytes de cada tipo primitiva utilizado abaixo:
    const int a = sizeof(union Value), b = sizeof(time_t), 
-     c = sizeof(DadoPropriedade), d = sizeof(wchar_t), f = sizeof(size_t);
+     c = sizeof(Tipo), d = sizeof(wchar_t), f = sizeof(size_t);
    size_t n = (*e).chave.len;
    // Somando na ordem que são serializados e concatenados. 
    int size = a + c + 2*b + f + n*d;
 
    #ifdef __debug__
    printf("'union Value' total de bytes: %d\n", a);
-   printf("DadoPropriedade total de bytes: %d\n", c);
+   printf("Tipo total de bytes: %d\n", c);
    printf("wchar_t total de bytes: %d\n", d);
    #endif
 
@@ -208,11 +203,11 @@ Registro deserializa_registro(struct Bytes* seq)
 /* Deserialização do tipo 'Registro' que é o valor que qualquer chave na 
  * 'tabela de dispersão' irá portar. */
    // Obtendo o tamanho de cada tipo utilizado no processo abaixo:
-   const int a = sizeof(union Value), b = sizeof(DadoPropriedade),
+   const int a = sizeof(union Value), b = sizeof(Tipo),
      c = sizeof(time_t), d = sizeof(size_t), e = sizeof(wchar_t);
    uint8_t* ptr = seq->bytes;
    union Value valor;  
-   DadoPropriedade tipo;
+   Tipo tipo;
    time_t criacao, atualizacao;
    size_t comprimento;
    wchar_t* str;
@@ -389,7 +384,6 @@ extrai_entrada_de_registro(uint8_t* input, size_t* lido)
    return output;
 }
 
-#include "tabela.h"
 HashTable deserializa_tabela(struct Bytes* input)
 {
 /*   O algoritmo de serializa coloca a série de bytes de cada entrada da 

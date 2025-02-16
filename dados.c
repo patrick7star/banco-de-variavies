@@ -1,8 +1,9 @@
 
 // Declaração das estruturas, funções e métodos abaixo:
 #include "dados.h"
-#include "teste.h"
+#include "macros.h"
 #include "aleatorio.h"
+#include "memoria.h"
 // Bibliotecas do C padrão, necessários para este arquivo:
 #include <stdlib.h>
 #include <assert.h>
@@ -18,17 +19,8 @@
  *                                  do C++
  * === === === === === === === === === === === === === === === === === ==*/
 // Estrutura que ármazena uma estringue Unicode, e o total de caractéres.
-struct String box_string(wchar_t* s) 
-{
-   struct String obj;
-   int t = wcslen(s) + 1;
-   int sz = sizeof(wchar_t);
-
-   obj.array = malloc(t * sz);
-   obj.len = t;
-   wcscpy(obj.array, s);
-
-   return obj;
+struct String new_string(wchar_t* In) { 
+   return (struct String){ box_wcs(In), wcslen(In) };
 }
 
 /* === === === === === === === === === === === === === === === === === ==
@@ -48,7 +40,7 @@ void enum_invalido(void)
    abort();
 }
 
-const char* dp_to_str(DadoPropriedade a)
+const char* dp_to_str(Tipo a)
 {
 /* Converte o 'enum' acima para a forma estringue, se for um 'inteiro'
  * válido(correspondente aos 'enum' dados). */
@@ -68,11 +60,11 @@ const char* dp_to_str(DadoPropriedade a)
    }
 }
 
-DadoPropriedade random_dp(void)
+Tipo random_dp(void)
 {
-// Retorno um enumerador do 'DadoPropriedade' randômico.
+// Retorno um enumerador do 'Tipo' randômico.
    int X = inteiro_positivo(95, 99);
-   return (DadoPropriedade)((-1) * X);
+   return (Tipo)((-1) * X);
 }
 
 /* === === === === === === === === === === === === === === === === === ==
@@ -84,7 +76,7 @@ DadoPropriedade random_dp(void)
  * 'união' é perfeita para isso, economiza banstante memória.
  * === === === === === === === === === === === === === === === === === ==*/
 
-union Value new_value(DadoPropriedade tipo_de_dado, void* vl)
+union Value new_value(Tipo tipo_de_dado, void* vl)
 {
 /* Converte atual pointeiro para algum dado na 'união Value' para a 
  * determinada união. */
@@ -103,7 +95,7 @@ union Value new_value(DadoPropriedade tipo_de_dado, void* vl)
       case Texto:
          // valor.texto = *((struct String*)vl);
          // Realiza uma cópia, e a coloca na 'heap'.
-         valor.texto = box_string((wchar_t*)vl);
+         valor.texto = new_string((wchar_t*)vl);
          break;
 
       case Caractere:
@@ -120,7 +112,7 @@ union Value new_value(DadoPropriedade tipo_de_dado, void* vl)
    return valor;
 }
 
-wchar_t* value_to_str(DadoPropriedade tipo, union Value* ptr)
+wchar_t* value_to_str(Tipo tipo, union Value* ptr)
 {
 /* Converte o atual tipo de dado numa string unicode. É Unicode, porque 
  * um dos dados da 'união valor' também transporta uma estringue Unicode,
@@ -161,7 +153,7 @@ wchar_t* value_to_str(DadoPropriedade tipo, union Value* ptr)
    return fmt;
 }
 
-union Value random_value(DadoPropriedade* tipo)
+union Value random_value(Tipo* tipo)
 {
 /* Geração aleatório, com valores aleatórios obviamente, do tipo 
  * 'union Value'. Este tipo de coisa é mais adequado para debugging, ou 
@@ -218,19 +210,18 @@ union Value random_value(DadoPropriedade* tipo)
    return output;
 }
 
-void free_value(DadoPropriedade t, union Value* obj) 
+void free_value(Tipo t, union Value* obj) 
 { 
    switch(t) {
       case Texto:
          free(obj->texto.array);
          break;
+
       default:
-         #ifdef __debug__
          printf(
             "['%s' | linha: %d] Não possíve liberar o tipo '%s'.\n", 
             __FILE__, __LINE__,  dp_to_str(t)
          );
-         #endif
    }
 }
 
@@ -241,7 +232,7 @@ void free_value(DadoPropriedade t, union Value* obj)
  *    Ela não é só o valor da entrada na HashTable, também têm a referência
  * da chave que ela segura para identifica-la.
  * === === === === === === === === === === === === === === === === === ==*/
-Registro cria_registro(DadoPropriedade t, wchar_t* k, void* vl)
+Registro cria_registro(Tipo t, wchar_t* k, void* vl)
 {
 /* Cria um simples registro, onde o tempo de criação e atualização é pego
  * durante a instanciação. */
@@ -252,7 +243,7 @@ Registro cria_registro(DadoPropriedade t, wchar_t* k, void* vl)
 
    return (Registro) {
       // Realiza uma cópia da estringue passada.
-      .chave = box_string(k),
+      .chave = new_string(k),
       .valor = new_value(t, vl),
       .criacao = momento,
       .atualizacao = momento,
@@ -260,7 +251,7 @@ Registro cria_registro(DadoPropriedade t, wchar_t* k, void* vl)
    }; 
 }
 
-Registro cria_registro_direto(DadoPropriedade type, ...)
+Registro cria_registro_direto(Tipo type, ...)
 {
 /* O mesmo que acima, inclusive utiliza da chamada dele para criar, só que,
  * muito mais flexível nos parâmetros. Apenas com o tipo dado, é sabido 
@@ -295,7 +286,7 @@ Registro cria_registro_direto(DadoPropriedade type, ...)
       case Texto:
          // valor.texto = (struct String){ .array=s, .len=t };
          s = va_arg(lista, wchar_t*);
-         valor.texto = box_string(s);
+         valor.texto = new_string(s);
          break;
 
       case Logico:
@@ -310,7 +301,7 @@ Registro cria_registro_direto(DadoPropriedade type, ...)
 
    return (Registro) {
       // Realiza uma cópia da string passada(tem que ser desalocada).
-      .chave = box_string(chave),
+      .chave = new_string(chave),
       .valor = valor,
       .criacao = time(NULL),
       .atualizacao = time(NULL),
@@ -331,12 +322,10 @@ void free_registro(Registro* reg)
          free(reg->valor.texto.array); 
          break;
       default:
-         #ifdef __debug__
          printf(
             "['%s' | linha: %d]Tipo(%d): %s\n", 
             __FILE__, __LINE__, reg->tipo, dp_to_str(reg->tipo)
          );
-         #endif
    }
    // Chave também retém uma string alocada(foi copiada na 'heap').
    free(reg->chave.array); 
@@ -347,7 +336,7 @@ Registro random_registro(void)
 /* Cria um registro de forma aleatório, com valores aleatórios. Ferramenta
  * é útil para debugging. */
    Registro output;
-   DadoPropriedade tp;
+   Tipo tp;
    union Value e = random_value(&tp);
    time_t c = inteiro_positivo(100, 499);
    time_t a = inteiro_positivo(500, 999);
@@ -374,7 +363,7 @@ void debug_registro(Registro* obj)
 {
 /* Mostra um registro, como seus campos de forma identada e organizada.
  * Tal ferramenta também é essencial para debuggin'. */
-   DadoPropriedade tp = obj->tipo;
+   Tipo tp = obj->tipo;
    union Value* vp = &obj->valor;
    wchar_t* valor_fmt = value_to_str(tp, vp);
    const char* tipo_fmt = dp_to_str(tp);
@@ -394,11 +383,12 @@ void debug_registro(Registro* obj)
  *    Faz uma série de testes dos dados estruturados, e as funções que o
  * seguem(métodos) acima.
  * === === === === === === === === === === === === === === === === === ==*/
+#include "teste.h"
 #include <locale.h>
 
 static void visualizacao_do_registro(Registro* r)
 {
-   DadoPropriedade type = r->tipo;
+   Tipo type = r->tipo;
    void* value = &r->valor;
    wchar_t* valuestr = value_to_str(type, value);
 
@@ -487,18 +477,18 @@ void tamanho_de_cada_tipo(void)
    printf(
       "Tamanho de todos tipos de dados deste módulo:\n\n"
       "union Value: %lu bytes.\nRegistro(struct): %lu bytes\n"
-      "struct String: %lu bytes\nDadoPropriedade(enum): %lu bytes\n",
+      "struct String: %lu bytes\nTipo(enum): %lu bytes\n",
       sizeof(union Value), sizeof(Registro), sizeof(struct String),
-      sizeof(DadoPropriedade)
+      sizeof(Tipo)
    );
 }
 
 void gerador_randomico_de_cada_tipo_de_dado(void)
 {
-   puts("Geração randômica de enumeradores do 'DadoPropriedade':");
+   puts("Geração randômica de enumeradores do 'Tipo':");
    for (int i = 1; i <= 10; i++)
    {
-      DadoPropriedade X = random_dp();
+      Tipo X = random_dp();
       const char* fmt = dp_to_str(X);
 
       printf("\t- %-15s (%d)\n", fmt, X);
@@ -507,7 +497,7 @@ void gerador_randomico_de_cada_tipo_de_dado(void)
    puts("\nGeração aleatório de 'union Value\'s'...");
    for (int i = 1; i <= 5; i++)
    {
-      DadoPropriedade Z;
+      Tipo Z;
       union Value Y = random_value(&Z);
       wchar_t* fmt_a = value_to_str(Z, &Y);
       const char* fmt_b = dp_to_str(Z);

@@ -18,7 +18,7 @@
    Decimal, 
    Caractere, 
    Logico 
- } DadoPropriedade, enumDP;
+ } Tipo, DadoPropriedade, enumDP;
 
  union  Value {
    // O valor pode assumir um caractére(símbolo Unicode)...
@@ -40,17 +40,17 @@
  /* Métodos de geração, ou alteração, das estruturas declaradas acima. Não
   * é claro ainda qual realmente terá um uso global, por enquanto, todas 
   * declaradas, serão, aqui, tornadas públicas. */
- struct String box_string(wchar_t* s);
- const char* dp_to_str(DadoPropriedade a);
- DadoPropriedade random_dp(void);
+ struct String new_string(wchar_t* s);
+ const char* dp_to_str(Tipo a);
+ Tipo random_dp(void);
 
- union Value new_value (DadoPropriedade tipo, void* vl);
- wchar_t* value_to_str (DadoPropriedade tipo, union Value* ptr);
- union Value random_value (DadoPropriedade* tipo);
- void free_value(DadoPropriedade t, union Value* obj); 
+ union Value new_value (Tipo tipo, void* vl);
+ wchar_t* value_to_str (Tipo tipo, union Value* ptr);
+ union Value random_value (Tipo* tipo);
+ void free_value(Tipo t, union Value* obj); 
 
- Registro cria_registro (DadoPropriedade t, wchar_t* k, void* vl);
- Registro cria_registro_direto (DadoPropriedade type, ...);
+ Registro cria_registro (Tipo t, wchar_t* k, void* vl);
+ Registro cria_registro_direto (Tipo type, ...);
  void free_registro (Registro* reg);
  void debug_registro (Registro* obj);
  Registro random_registro (void);
@@ -74,7 +74,7 @@ struct entrada_da_grande_tabela
    union Value valor;
 
    // Que tipo de objeto isto representa.
-   DadoPropriedade tipo;
+   Tipo tipo;
 
    // Quando foi criada tal entrada.
    time_t criacao;
